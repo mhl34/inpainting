@@ -10,6 +10,7 @@ from InpaintingDataset import InpaintingDataset
 from Loss import Loss
 from tqdm import tqdm
 import torch.optim as optim
+import matplotlib.pyplot as plt
 
 class runModel():
     def __init__(self):
@@ -17,6 +18,7 @@ class runModel():
 
     def train(self, model, hyperparams, dataloader, criterion, optimizer):
         model.train()
+        lossLst = []
         for epoch in range(hyperparams.epochs):
             progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Epoch {epoch + 1}', unit='batch')
             for batch_idx, (img1, img2) in progress_bar:
@@ -29,6 +31,22 @@ class runModel():
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+
+                lossLst.append(loss.item())
+
+                if batch_idx == 1:
+                    img1_arr = torch.clamp(img1, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
+                    img2_arr = torch.clamp(img2, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
+                    plt.figure(figsize=(10, 5))
+                    plt.subplot(1, 2, 1)
+                    plt.imshow(img1_arr)
+                    plt.title('Image 1')
+                    plt.subplot(1, 2, 2)
+                    plt.imshow(img2_arr)
+                    plt.title('Image 2')
+                    plt.show()
+
+            print(f"Epoch {epoch + 1}   Average Training Loss: {sum(lossLst)/len(lossLst)}")
                 
 
     def evaluate(self):
