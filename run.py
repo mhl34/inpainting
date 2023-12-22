@@ -19,6 +19,7 @@ class runModel():
     def train(self, model, hyperparams, dataloader, criterion, optimizer):
         model.train()
         lossLst = []
+        bestLoss = float('inf')
         for epoch in range(hyperparams.epochs):
             progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Epoch {epoch + 1}', unit='batch')
             for batch_idx, (img1, img2) in progress_bar:
@@ -34,18 +35,31 @@ class runModel():
 
                 lossLst.append(loss.item())
 
-                if batch_idx == 1:
-                    img1_arr = torch.clamp(img1, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
-                    img2_arr = torch.clamp(img2, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
-                    plt.figure(figsize=(10, 5))
-                    plt.subplot(1, 2, 1)
-                    plt.imshow(img1_arr)
-                    plt.title('Image 1')
-                    plt.subplot(1, 2, 2)
-                    plt.imshow(img2_arr)
-                    plt.title('Image 2')
-                    plt.show()
+                if not batch_idx % 100:
+                    input_arr = torch.clamp(img1, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
+                    preds_arr = torch.clamp(preds, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
+                    target_arr = torch.clamp(img2, 0, 1)[0].permute(1, 2, 0).detach().cpu().numpy()
+                    plt.figure(figsize=(15, 5))
+                    plt.subplot(1, 3, 1)
+                    plt.imshow(input_arr)
+                    plt.title('Input')
+                    plt.subplot(1, 3, 2)
+                    plt.imshow(preds_arr)
+                    plt.title('Prediction')
+                    plt.subplot(1, 3, 3)
+                    plt.imshow(target_arr)
+                    plt.title('Target')
+                    plt.savefig(f"figures/{epoch}_{batch_idx}.png")
 
+            avgLoss = sum(lossLst)/len(lossLst)
+            if avgLoss < bestLoss:
+                print("Saving ...")
+                # Save the learned representation for downstream tasks
+                state = {'state_dict': model.state_dict(),
+                         'epoch': epoch,
+                         'lr': hyperparams.learning_rate}
+                torch.save(state, f'inpainting_model.pth')
+                best_loss = sum(lossLst)/len(lossLst)
             print(f"Epoch {epoch + 1}   Average Training Loss: {sum(lossLst)/len(lossLst)}")
                 
 
