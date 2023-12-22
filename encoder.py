@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class encoder(nn.module):
-    def __init__(self, transforms):
+    def __init__(self):
         super(encoder, self).__init__()
         # input: 224 x 224 x 3
         # output: 54 x 54 x 96
